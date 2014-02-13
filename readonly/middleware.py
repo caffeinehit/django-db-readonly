@@ -23,7 +23,7 @@ class DatabaseReadOnlyMiddleware(object):
             return None
         
         # Handle the exception
-        if request.method == 'POST':
+        if request.method in ['POST', 'PUT', 'DELETE']:
             if getattr(settings, 'DB_READ_ONLY_MIDDLEWARE_MESSAGE', False):
                 from django.contrib import messages
                 messages.error(request, 'The site is currently in read-only '

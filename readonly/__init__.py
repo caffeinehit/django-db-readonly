@@ -4,9 +4,10 @@ Django DB Readonly
 """
 
 import pkg_resources
+import re
 
-VERSION = tuple(map(int, pkg_resources.get_distribution('django-db-readonly').version.split('.')))
-__version__ = VERSION
+#VERSION = tuple(map(int, pkg_resources.get_distribution('django-db-readonly').version.split('.')))
+__version__ = (0,3,2)
 
 from time import time
 
@@ -22,6 +23,8 @@ logger = getLogger('django.db.backends')
 def _readonly():
     return getattr(settings, 'SITE_READ_ONLY', False)
 
+def _whitelisted_table_prefixes():
+    return getattr(settings, 'SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES', ())
 
 class ReadOnlyCursorWrapper(object):
     """
@@ -53,13 +56,13 @@ class ReadOnlyCursorWrapper(object):
 
     def execute(self, sql, params=()):
         # Check the SQL
-        if self.readonly and self._write_sql(sql):
+        if self.readonly and self._write_sql(sql) and not self._whitelisted(sql):
             raise DatabaseWriteDenied
         return self.cursor.execute(sql, params)
 
     def executemany(self, sql, param_list):
         # Check the SQL
-        if self.readonly and self._write_sql(sql):
+        if self.readonly and self._write_sql(sql) and not self._whitelisted(sql):
             raise DatabaseWriteDenied
         return self.cursor.executemany(sql, param_list)
 
@@ -71,6 +74,18 @@ class ReadOnlyCursorWrapper(object):
 
     def _write_sql(self, sql):
         return sql.startswith(self.SQL_WRITE_BLACKLIST)
+    
+    def _whitelisted(self, sql):
+        whitelist_exists = len(_whitelisted_table_prefixes()) > 0
+        
+        WHITELIST_STRING = "".join(['{0}|'.format(s) for s in _whitelisted_table_prefixes()])[:-1]
+        DD_WHITELIST_REGEX = r'(CREATE|ALTER|RENAME|DROP|TRUNCATE) TABLE "?({0})[^"\s]*?"?'.format(WHITELIST_STRING)
+        DM_WHITELIST_REGEX = r'(INSERT INTO|UPDATE|DELETE FROM) "?({0})[^"\s]*?"?'.format(WHITELIST_STRING)
+        
+        return whitelist_exists and (
+            re.match(DD_WHITELIST_REGEX, sql) or 
+            re.match(DM_WHITELIST_REGEX, sql)
+        )
 
 
 class CursorWrapper(util.CursorWrapper):
