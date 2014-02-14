@@ -36,6 +36,10 @@ def runtests(*test_args, **options):
     TestRunner = get_runner(settings)
     
     test_runner = TestRunner(**options)
+    
+    # We need to manually setup the databases before we call `run_tests`
+    # This is because if SITE_READ_ONLY is True then the tables we need
+    # cannot be created
     test_runner.setup_databases()
     
     # Yeah, we are naughty https://docs.djangoproject.com/en/1.6/topics/settings/#altering-settings-at-runtime
