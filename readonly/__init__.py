@@ -76,18 +76,20 @@ class ReadOnlyCursorWrapper(object):
         return iter(self.cursor)
 
     def _write_sql(self, sql):
-        return sql.startswith(self.SQL_WRITE_BLACKLIST)
+        return sql.strip().upper().startswith(self.SQL_WRITE_BLACKLIST)
     
     def _whitelisted(self, sql):
         whitelist_exists = len(_whitelisted_table_prefixes()) > 0
         
-        WHITELIST_STRING = "".join(['{0}|'.format(s) for s in _whitelisted_table_prefixes()])[:-1]
-        DD_WHITELIST_REGEX = r'(CREATE|ALTER|RENAME|DROP|TRUNCATE) TABLE "?({0})[^"\s]*?"?'.format(WHITELIST_STRING)
-        DM_WHITELIST_REGEX = r'(INSERT INTO|UPDATE|DELETE FROM) "?({0})[^"\s]*?"?'.format(WHITELIST_STRING)
+        base_regex = r'\s*?{0}"?\s*?({1})[^"\s]*?"?'
+        
+        whitelisted_tables = "".join(['{0}|'.format(s) for s in _whitelisted_table_prefixes()])[:-1]
+        table_modification_regex = base_regex.format("(CREATE|ALTER|RENAME|DROP|TRUNCATE) TABLE", whitelisted_tables)
+        row_modification_regex = base_regex.format("(INSERT INTO|UPDATE|DELETE FROM) ", whitelisted_tables)
         
         return whitelist_exists and (
-            re.match(DD_WHITELIST_REGEX, sql) or 
-            re.match(DM_WHITELIST_REGEX, sql)
+            re.match(table_modification_regex, sql, re.IGNORECASE) or 
+            re.match(row_modification_regex, sql, re.IGNORECASE)
         )
 
 

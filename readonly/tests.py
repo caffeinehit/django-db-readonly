@@ -70,17 +70,23 @@ class ReadOnlyCursorTest(TransactionTestCase):
         cursor = connection.cursor()
         
         sql = "INSERT INTO readonly_testmodel (title) VALUES (%s)"
+        lowercase_sql = "insert into readonly_testmodel (title) values (%s)"
+        whitespace_sql = "  insert into    readonly_testmodel    (title) values (%s)   "
         
         # Tests that we can't insert
         self.assertRaises(DatabaseWriteDenied, cursor.execute, sql, ['Test'])
+        self.assertRaises(DatabaseWriteDenied, cursor.execute, lowercase_sql, ['Test'])
+        self.assertRaises(DatabaseWriteDenied, cursor.execute, whitespace_sql, ['Test'])
         
         with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('readonly_testmodel',)):
             
             # Tests that we can insert
             cursor.execute(sql, ['Test'])
+            cursor.execute(lowercase_sql, ['Test'])
+            cursor.execute(whitespace_sql, ['Test'])
             
             number_of_pins = TestModel.objects.count()
-            self.assertTrue(number_of_pins, 1)
+            self.assertTrue(number_of_pins, 3)
     
     def tearDown(self):
         util.CursorWrapper = self.oldCursorWrapper
