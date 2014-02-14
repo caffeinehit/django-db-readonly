@@ -148,10 +148,10 @@ if _readonly():
         settings.SITE_READ_ONLY = False
     
     try:
-        import south
+        from south import signals as south_signals
         # While the database is being migrated, it's pretty safe to assume
         # we want to enable writing
-        @receiver(south.signals.pre_migrate)
+        @receiver(south_signals.pre_migrate)
         def disable_read_only_when_migrating_database(**kwargs):
             settings.SITE_READ_ONLY = False
     except ImportError:
