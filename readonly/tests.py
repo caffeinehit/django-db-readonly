@@ -1,3 +1,4 @@
+from django.db import connection
 from django.db import transaction
 from django.db.backends import util
 from django.test import TransactionTestCase
@@ -64,6 +65,22 @@ class ReadOnlyCursorTest(TransactionTestCase):
             
             # Test that other tables are still readonly
             self.assertRaises(DatabaseWriteDenied, other_instance.delete)
+    
+    def test_raw(self):
+        cursor = connection.cursor()
+        
+        sql = "INSERT INTO readonly_testmodel (title) VALUES (%s)"
+        
+        # Tests that we can't insert
+        self.assertRaises(DatabaseWriteDenied, cursor.execute, sql, ['Test'])
+        
+        with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('readonly_testmodel',)):
+            
+            # Tests that we can insert
+            cursor.execute(sql, ['Test'])
+            
+            number_of_pins = TestModel.objects.count()
+            self.assertTrue(number_of_pins, 1)
     
     def tearDown(self):
         util.CursorWrapper = self.oldCursorWrapper
