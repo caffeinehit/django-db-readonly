@@ -62,13 +62,13 @@ class ReadOnlyCursorWrapper(object):
     def execute(self, sql, params=()):
         # Check the SQL
         if _readonly() and self._write_sql(sql) and not self._whitelisted(sql):
-            raise DatabaseWriteDenied
+            raise DatabaseWriteDenied(sql)
         return self.cursor.execute(sql, params)
 
     def executemany(self, sql, param_list):
         # Check the SQL
         if _readonly() and self._write_sql(sql) and not self._whitelisted(sql):
-            raise DatabaseWriteDenied
+            raise DatabaseWriteDenied(sql)
         return self.cursor.executemany(sql, param_list)
 
     def __getattr__(self, attr):
