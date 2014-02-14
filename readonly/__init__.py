@@ -6,8 +6,11 @@ Django DB Readonly
 import pkg_resources
 import re
 
-#VERSION = tuple(map(int, pkg_resources.get_distribution('django-db-readonly').version.split('.')))
-__version__ = (0,3,2)
+try:
+    VERSION = tuple(map(int, pkg_resources.get_distribution('django-db-readonly').version.split('.')))
+    __version__ = VERSION
+except pkg_resources.DistributionNotFound:
+    pass
 
 from time import time
 
