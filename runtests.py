@@ -18,6 +18,7 @@ if not settings.configured:
         ],
         ROOT_URLCONF='',
         DEBUG=False,
+        SITE_READ_ONLY=True,
     )
 
 from django.test.utils import get_runner
@@ -34,16 +35,7 @@ def runtests(*test_args, **options):
     sys.path.insert(0, parent)
     
     TestRunner = get_runner(settings)
-    
     test_runner = TestRunner(**options)
-    
-    # We need to manually setup the databases before we call `run_tests`
-    # This is because if SITE_READ_ONLY is True then the tables we need
-    # cannot be created
-    test_runner.setup_databases()
-    
-    # Yeah, we are naughty https://docs.djangoproject.com/en/1.6/topics/settings/#altering-settings-at-runtime
-    settings.SITE_READ_ONLY = True
     failures = test_runner.run_tests(test_args)
 
     if failures:

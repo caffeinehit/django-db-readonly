@@ -16,6 +16,8 @@ from time import time
 
 from django.conf import settings
 from django.db.backends import util
+from django.db.models import signals
+from django.dispatch import receiver
 from django.utils.log import getLogger
 from .exceptions import DatabaseWriteDenied
 
@@ -55,17 +57,16 @@ class ReadOnlyCursorWrapper(object):
 
     def __init__(self, cursor):
         self.cursor = cursor
-        self.readonly = _readonly()
 
     def execute(self, sql, params=()):
         # Check the SQL
-        if self.readonly and self._write_sql(sql) and not self._whitelisted(sql):
+        if _readonly() and self._write_sql(sql) and not self._whitelisted(sql):
             raise DatabaseWriteDenied
         return self.cursor.execute(sql, params)
 
     def executemany(self, sql, param_list):
         # Check the SQL
-        if self.readonly and self._write_sql(sql) and not self._whitelisted(sql):
+        if _readonly() and self._write_sql(sql) and not self._whitelisted(sql):
             raise DatabaseWriteDenied
         return self.cursor.executemany(sql, param_list)
 
@@ -138,3 +139,9 @@ if _readonly():
     # Monkey Patching!
     util.CursorWrapper = CursorWrapper
     util.CursorDebugWrapper = CursorDebugWrapper
+    
+    # While the database is being synced, it's pretty safe to assume
+    # we want to enable writing
+    @receiver(signals.pre_syncdb)
+    def disable_read_only_when_syncing_database(**kwargs):
+        settings.SITE_READ_ONLY = False
