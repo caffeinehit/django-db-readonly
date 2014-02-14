@@ -19,6 +19,7 @@ from django.db.backends import util
 from django.db.models import signals
 from django.dispatch import receiver
 from django.utils.log import getLogger
+
 from .exceptions import DatabaseWriteDenied
 
 
@@ -145,3 +146,13 @@ if _readonly():
     @receiver(signals.pre_syncdb)
     def disable_read_only_when_syncing_database(**kwargs):
         settings.SITE_READ_ONLY = False
+    
+    try:
+        import south
+        # While the database is being migrated, it's pretty safe to assume
+        # we want to enable writing
+        @receiver(south.signals.pre_migrate)
+        def disable_read_only_when_migrating_database(**kwargs):
+            settings.SITE_READ_ONLY = False
+    except ImportError:
+        pass
