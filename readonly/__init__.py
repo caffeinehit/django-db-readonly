@@ -83,15 +83,17 @@ class ReadOnlyCursorWrapper(object):
     def _whitelisted(self, sql):
         whitelist_exists = len(_whitelisted_table_prefixes()) > 0
         
-        base_regex = r'\s*?{0}"?\s*?({1})[^"\s]*?"?'
+        base_regex = r'\s*?{0}\s*?"?({1})[^"\s]*?"?'
         
         whitelisted_tables = "".join(['{0}|'.format(s) for s in _whitelisted_table_prefixes()])[:-1]
-        table_modification_regex = base_regex.format("(CREATE|ALTER|RENAME|DROP|TRUNCATE) TABLE", whitelisted_tables)
+        table_modification_regex = base_regex.format("(CREATE|ALTER|RENAME|DROP|TRUNCATE) TABLE ", whitelisted_tables)
         row_modification_regex = base_regex.format("(INSERT INTO|UPDATE|DELETE FROM) ", whitelisted_tables)
+        index_regex =  r'\s*?CREATE INDEX.* ON "?({0})[^"\s]*?"?'.format(whitelisted_tables)
         
         return whitelist_exists and (
             re.match(table_modification_regex, sql, re.IGNORECASE) or 
-            re.match(row_modification_regex, sql, re.IGNORECASE)
+            re.match(row_modification_regex, sql, re.IGNORECASE) or
+            re.match(index_regex, sql, re.IGNORECASE)
         )
 
 
