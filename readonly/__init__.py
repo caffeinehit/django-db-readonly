@@ -86,7 +86,7 @@ class ReadOnlyCursorWrapper(object):
         
         base_regex = r'\s*?{0}\s*?"?({1})[^"\s]*?"?'
         
-        whitelisted_tables = "".join(['{0}|'.format(s) for s in _whitelisted_table_prefixes()])[:-1]
+        whitelisted_tables = "|".join(['{0}'.format(s) for s in _whitelisted_table_prefixes()])
         table_modification_regex = base_regex.format("(CREATE|ALTER|RENAME|DROP|TRUNCATE) TABLE ", whitelisted_tables)
         row_modification_regex = base_regex.format("(INSERT INTO|UPDATE|DELETE FROM) ", whitelisted_tables)
         index_regex =  r'\s*?CREATE INDEX.* ON "?({0})[^"\s]*?"?'.format(whitelisted_tables)
