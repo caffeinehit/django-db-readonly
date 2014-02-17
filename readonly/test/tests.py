@@ -4,8 +4,9 @@ from django.db import transaction
 from django.db.backends import util
 from django.test import TransactionTestCase
 
-from . import CursorWrapper, CursorDebugWrapper
-from .exceptions import DatabaseWriteDenied
+from readonly.exceptions import DatabaseWriteDenied
+
+from .. import CursorWrapper, CursorDebugWrapper
 from .models import TestModel, OtherTestModel
     
 class ReadOnlyCursorTest(TransactionTestCase):
@@ -18,7 +19,7 @@ class ReadOnlyCursorTest(TransactionTestCase):
             self.assertRaises(DatabaseWriteDenied, TestModel.objects.create, title = 'Test')
         
             # Adds one table to the whitelist
-            with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('readonly_testmodel',)):
+            with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('test_testmodel',)):
             
                 # Tests that this table can now be written to
                 TestModel.objects.create(title='Test')
@@ -36,7 +37,7 @@ class ReadOnlyCursorTest(TransactionTestCase):
             self.assertRaises(DatabaseWriteDenied, instance.save)
         
             # Add one table to the whitelist
-            with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('readonly_testmodel',)):
+            with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('test_testmodel',)):
             
                 # Test that we can write to the table
                 instance.title = 'Test3'
@@ -56,7 +57,7 @@ class ReadOnlyCursorTest(TransactionTestCase):
             self.assertRaises(DatabaseWriteDenied, instance.delete)
         
             # Add one table to the whitelist
-            with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('readonly_testmodel',)):
+            with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('test_testmodel',)):
                 # Test that we can delete to the whitelisted table
                 instance2.delete()
             
@@ -67,16 +68,16 @@ class ReadOnlyCursorTest(TransactionTestCase):
         with self.settings(SITE_READ_ONLY=True):
             cursor = connection.cursor()
         
-            sql = "INSERT INTO readonly_testmodel (title) VALUES (%s)"
-            lowercase_sql = "insert into readonly_testmodel (title) values (%s)"
-            whitespace_sql = "  insert into    readonly_testmodel    (title) values (%s)   "
+            sql = "INSERT INTO test_testmodel (title) VALUES (%s)"
+            lowercase_sql = "insert into test_testmodel (title) values (%s)"
+            whitespace_sql = "  insert into    test_testmodel    (title) values (%s)   "
         
             # Tests that we can't insert
             self.assertRaises(DatabaseWriteDenied, cursor.execute, sql, ['Test'])
             self.assertRaises(DatabaseWriteDenied, cursor.execute, lowercase_sql, ['Test'])
             self.assertRaises(DatabaseWriteDenied, cursor.execute, whitespace_sql, ['Test'])
         
-            with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('readonly_testmodel',)):
+            with self.settings(SITE_READ_ONLY_WHITELISTED_TABLE_PREFIXES=('test_testmodel',)):
             
                 # Tests that we can insert
                 cursor.execute(sql, ['Test'])

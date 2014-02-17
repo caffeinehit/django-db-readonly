@@ -9,12 +9,12 @@ if not settings.configured:
         DATABASES = {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': 'mydatabase',
+                'NAME': 'testdb.sqlite',
             }
         },
         
         INSTALLED_APPS=[
-            'readonly',
+            'readonly.test',
         ],
         ROOT_URLCONF='',
         DEBUG=False,
@@ -29,7 +29,7 @@ def runtests(*test_args, **options):
         patch_for_test_db_setup()
 
     if not test_args:
-        test_args = ['readonly']
+        test_args = ['readonly.test']
     
     parent = dirname(abspath(__file__))
     sys.path.insert(0, parent)
