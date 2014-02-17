@@ -8,9 +8,10 @@ import re
 
 try:
     VERSION = tuple(map(int, pkg_resources.get_distribution('django-db-readonly').version.split('.')))
-    __version__ = VERSION
 except pkg_resources.DistributionNotFound:
-    pass
+    VERSION = (0, 0, 0)
+
+__version__ = VERSION
 
 from time import time
 
